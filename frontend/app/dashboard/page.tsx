@@ -1,379 +1,408 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { AgentPipelineCompact } from "@/components/agent/agent-pipeline";
-import { ActivityFeedMini } from "@/components/agent/activity-feed";
-import { AgentNetworkMini } from "@/components/agent/agent-network";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import {
-  PlusCircle,
-  Activity,
-  FileText,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Brain,
-  Search,
-  BarChart3,
-  PenTool,
-  Shield,
-  ArrowRight,
-  Sparkles,
-  Sun,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   TrendingUp,
-  MessageSquare,
+  TrendingDown,
+  DollarSign,
+  ShoppingBag,
+  Users,
   Package,
-  IndianRupee,
-  Megaphone,
+  ArrowUpRight,
+  ArrowDownRight,
+  MoreHorizontal,
+  Calendar,
+  Zap,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from "recharts";
 
-// Agent status types
-type AgentStatus = "idle" | "active" | "complete" | "retrying" | "error";
+// Mock data for charts
+const salesData = [
+  { date: "Feb 12", sales: 0 },
+  { date: "Feb 14", sales: 0 },
+  { date: "Feb 16", sales: 0 },
+  { date: "Feb 18", sales: 0 },
+  { date: "Feb 20", sales: 0 },
+  { date: "Feb 22", sales: 0 },
+  { date: "Feb 24", sales: 0 },
+  { date: "Feb 26", sales: 0 },
+  { date: "Feb 28", sales: 0 },
+  { date: "Mar 2", sales: 0 },
+  { date: "Mar 4", sales: 0 },
+  { date: "Mar 6", sales: 0 },
+  { date: "Mar 8", sales: 0 },
+  { date: "Mar 10", sales: 0 },
+  { date: "Mar 12", sales: 3 },
+];
 
-interface Agent {
-  id: string;
-  name: string;
-  role: string;
-  status: AgentStatus;
-  confidence?: number;
-  message?: string;
-  icon: React.ElementType;
-}
+const recentOrders = [
+  { id: "#1001", customer: "Rahul Sharma", amount: "₹2,499", status: "completed", date: "2 min ago" },
+  { id: "#1002", customer: "Priya Patel", amount: "₹1,899", status: "processing", date: "15 min ago" },
+  { id: "#1003", customer: "Amit Kumar", amount: "₹3,299", status: "pending", date: "1 hour ago" },
+  { id: "#1004", customer: "Sneha Gupta", amount: "₹999", status: "completed", date: "2 hours ago" },
+];
 
-const agents: Agent[] = [
+const automations = [
+  { id: 1, name: "Order Management", status: "active", lastRun: "2 min ago", icon: ShoppingBag },
+  { id: 2, name: "Inventory Alerts", status: "active", lastRun: "1 hour ago", icon: Package },
+  { id: 3, name: "Review Management", status: "warning", lastRun: "2 hours ago", icon: AlertCircle },
+  { id: 4, name: "Social Media", status: "active", lastRun: "5 hours ago", icon: Zap },
+];
+
+const stats = [
   {
-    id: "planner",
-    name: "Planner",
-    role: "Business Project Manager",
-    status: "complete",
-    confidence: 9.2,
-    message: "Broke goal into 5 subtasks",
-    icon: Brain,
+    title: "Total Sales",
+    value: "₹0.00",
+    change: "+0%",
+    trend: "up",
+    icon: DollarSign,
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50",
   },
   {
-    id: "researcher",
-    name: "Researcher",
-    role: "Business Intelligence",
-    status: "active",
-    message: "Searching competitor data...",
-    icon: Search,
+    title: "Orders",
+    value: "0",
+    change: "+0%",
+    trend: "up",
+    icon: ShoppingBag,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
   },
   {
-    id: "analyst",
-    name: "Analyst",
-    role: "Business Data Scientist",
-    status: "idle",
-    icon: BarChart3,
+    title: "Customers",
+    value: "0",
+    change: "+0%",
+    trend: "neutral",
+    icon: Users,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
   },
   {
-    id: "marketing",
-    name: "Marketing Analyst",
-    role: "Competitive Intelligence",
-    status: "idle",
-    icon: Megaphone,
-  },
-  {
-    id: "writer",
-    name: "Writer",
-    role: "Content Creator",
-    status: "idle",
-    icon: PenTool,
-  },
-  {
-    id: "critic",
-    name: "Critic",
-    role: "Quality Controller",
-    status: "idle",
-    icon: Shield,
+    title: "Avg Order Value",
+    value: "₹0.00",
+    change: "-0%",
+    trend: "down",
+    icon: TrendingUp,
+    color: "text-orange-600",
+    bgColor: "bg-orange-50",
   },
 ];
 
-// Morning Briefing Component
-function MorningBriefing() {
+function StatCard({ stat }: { stat: any }) {
+  const Icon = stat.icon;
+  const TrendIcon = stat.trend === "up" ? ArrowUpRight : stat.trend === "down" ? ArrowDownRight : null;
+  
   return (
-    <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Sun className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-lg">Good Morning! ☀️</h3>
-              <p className="text-sm text-muted-foreground mt-1">Here's your business briefing for today</p>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                <div className="p-3 rounded-lg bg-white/50 dark:bg-white/5">
-                  <p className="text-[10px] text-muted-foreground uppercase">Yesterday Revenue</p>
-                  <p className="text-lg font-medium flex items-center">
-                    <IndianRupee className="w-4 h-4 mr-0.5" />
-                    12,450
-                  </p>
-                  <p className="text-xs text-green-500">+8% vs avg</p>
-                </div>
-                <div className="p-3 rounded-lg bg-white/50 dark:bg-white/5">
-                  <p className="text-[10px] text-muted-foreground uppercase">Best Product</p>
-                  <p className="text-sm font-medium">Festive Kurtis</p>
-                  <p className="text-xs text-muted-foreground">42% margin</p>
-                </div>
-                <div className="p-3 rounded-lg bg-white/50 dark:bg-white/5">
-                  <p className="text-[10px] text-muted-foreground uppercase">New Reviews</p>
-                  <p className="text-lg font-medium">3</p>
-                  <p className="text-xs text-green-500">All 5★</p>
-                </div>
-                <div className="p-3 rounded-lg bg-white/50 dark:bg-white/5">
-                  <p className="text-[10px] text-muted-foreground uppercase">Stock Alert</p>
-                  <p className="text-sm font-medium text-amber-600">2 items low</p>
-                  <p className="text-xs text-muted-foreground">Check inventory</p>
-                </div>
-              </div>
-
-              <div className="mt-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <p className="text-sm">
-                  <span className="font-medium">💡 Today's Action:</span> Competitor "StyleHub" launched a 20% discount. Consider a limited-time offer on your best-selling kurtis to maintain market share.
-                </p>
-              </div>
-            </div>
-          </div>
-          <Badge variant="secondary" className="text-[10px]">
-            Auto-generated at 7:00 AM IST
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function AgentCard({ agent }: { agent: Agent }) {
-  const Icon = agent.icon;
-  const statusColors = {
-    idle: "bg-muted text-muted-foreground",
-    active: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    complete: "bg-green-500/10 text-green-500 border-green-500/20",
-    retrying: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    error: "bg-red-500/10 text-red-500 border-red-500/20",
-  };
-
-  const statusIcons = {
-    idle: Clock,
-    active: Activity,
-    complete: CheckCircle2,
-    retrying: AlertCircle,
-    error: AlertCircle,
-  };
-
-  const StatusIcon = statusIcons[agent.status];
-
-  return (
-    <Card className={`relative overflow-hidden transition-all duration-300 ${agent.status === "active" ? "ring-2 ring-blue-500/20" : ""}`}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-4">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${statusColors[agent.status]}`}>
-            <Icon className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium truncate">{agent.name}</h3>
-              <Badge variant="secondary" className="text-xs">
-                <StatusIcon className="w-3 h-3 mr-1" />
-                {agent.status}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">{agent.role}</p>
-            {agent.message && (
-              <p className="text-sm mt-2 truncate">{agent.message}</p>
-            )}
-            {agent.confidence && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">Confidence</span>
-                  <span className="font-medium">{agent.confidence}/10</span>
-                </div>
-                <Progress value={agent.confidence * 10} className="h-1.5" />
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-      {agent.status === "active" && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500">
-          <div className="h-full w-1/3 bg-blue-300 animate-pulse" />
-        </div>
-      )}
-    </Card>
-  );
-}
-
-function StatCard({ title, value, description, icon: Icon, trend }: {
-  title: string;
-  value: string;
-  description: string;
-  icon: React.ElementType;
-  trend?: string;
-}) {
-  return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <h3 className="text-2xl font-display mt-1">{value}</h3>
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+            <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+            <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
+            <div className="flex items-center gap-1 mt-1">
+              {TrendIcon && (
+                <TrendIcon className={`h-4 w-4 ${stat.trend === "up" ? "text-emerald-600" : "text-red-600"}`} />
+              )}
+              <span className={`text-sm ${stat.trend === "up" ? "text-emerald-600" : stat.trend === "down" ? "text-red-600" : "text-muted-foreground"}`}>
+                {stat.change}
+              </span>
+              <span className="text-sm text-muted-foreground">vs last 30 days</span>
+            </div>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-foreground/5 flex items-center justify-center">
-            <Icon className="w-5 h-5" />
+          <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+            <Icon className={`h-5 w-5 ${stat.color}`} />
           </div>
         </div>
-        {trend && (
-          <div className="mt-4 flex items-center text-xs text-green-500">
-            <Sparkles className="w-3 h-3 mr-1" />
-            {trend}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SalesChart() {
+  return (
+    <Card className="col-span-2">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold">Sales over time</CardTitle>
+            <CardDescription>Sessions by top 5 channels</CardDescription>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8">
+              <Calendar className="h-4 w-4 mr-2" />
+              Last 30 days
+            </Button>
+            <Select defaultValue="daily">
+              <SelectTrigger className="w-[100px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={salesData}>
+              <defs>
+                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+              <XAxis 
+                dataKey="date" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+                dy={10}
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="sales" 
+                stroke="#3b82f6" 
+                strokeWidth={2}
+                fillOpacity={1} 
+                fill="url(#colorSales)" 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex items-center justify-center gap-6 mt-4">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <span className="text-sm text-muted-foreground">Direct</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecentOrdersTable() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Recent Orders</CardTitle>
+          <Link href="/dashboard/orders">
+            <Button variant="ghost" size="sm" className="h-8 text-blue-600">
+              View all
+              <ArrowUpRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {recentOrders.map((order) => (
+            <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                    {order.customer.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium">{order.customer}</p>
+                  <p className="text-xs text-muted-foreground">{order.id} • {order.date}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium">{order.amount}</p>
+                <Badge 
+                  variant={order.status === "completed" ? "default" : order.status === "processing" ? "secondary" : "outline"}
+                  className="text-xs mt-1"
+                >
+                  {order.status}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AutomationStatus() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Active Automations</CardTitle>
+          <Link href="/dashboard/automations">
+            <Button variant="ghost" size="sm" className="h-8 text-blue-600">
+              Manage
+              <ArrowUpRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {automations.map((automation) => {
+            const Icon = automation.icon;
+            return (
+              <div key={automation.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${automation.status === "active" ? "bg-emerald-50" : "bg-amber-50"}`}>
+                    <Icon className={`h-4 w-4 ${automation.status === "active" ? "text-emerald-600" : "text-amber-600"}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{automation.name}</p>
+                    <p className="text-xs text-muted-foreground">Last run {automation.lastRun}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {automation.status === "active" ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-100">
+          <div className="flex items-start gap-3">
+            <div className="p-1.5 rounded-full bg-blue-100">
+              <Zap className="h-4 w-4 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-blue-900">Automation tip</p>
+              <p className="text-xs text-blue-700 mt-0.5">
+                Enable Inventory Alerts to get notified when stock runs low automatically.
+              </p>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
 export default function DashboardPage() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-display tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Monitor your AI agents and manage tasks
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
+          <p className="text-muted-foreground mt-1">Welcome back! Here's what's happening with your store.</p>
         </div>
-        <Link href="/dashboard/new-task">
-          <Button className="bg-foreground hover:bg-foreground/90 text-background rounded-full">
-            <PlusCircle className="w-4 h-4 mr-2" />
-            New Task
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Calendar className="h-4 w-4 mr-2" />
+            Last 30 days
           </Button>
-        </Link>
-      </div>
-
-      {/* Morning Briefing */}
-      <MorningBriefing />
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Tasks"
-          value="24"
-          description="All time tasks"
-          icon={FileText}
-          trend="+3 this week"
-        />
-        <StatCard
-          title="Active Jobs"
-          value="2"
-          description="Currently running"
-          icon={Activity}
-        />
-        <StatCard
-          title="Avg. Confidence"
-          value="8.7"
-          description="Out of 10"
-          icon={CheckCircle2}
-          trend="Above threshold"
-        />
-        <StatCard
-          title="Est. Value Generated"
-          value="₹1.2L"
-          description="From insights"
-          icon={IndianRupee}
-          trend="ROI: 450%"
-        />
-      </div>
-
-      {/* Agents Status */}
-      <div>
-        <h2 className="text-lg font-medium mb-4">Agent Status</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} />
-          ))}
+          <Button size="sm">
+            <Zap className="h-4 w-4 mr-2" />
+            Run Automation
+          </Button>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Tasks</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              { goal: "Should I launch a fintech startup in India?", status: "completed", time: "2 min ago", confidence: 9.2 },
-              { goal: "Analyze EV market trends for 2026", status: "running", time: "5 min ago", confidence: null },
-              { goal: "Research competitor pricing strategies", status: "completed", time: "1 hour ago", confidence: 8.5 },
-            ].map((task, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-foreground/5">
-                <div className="flex-1 min-w-0 mr-4">
-                  <p className="text-sm font-medium truncate">{task.goal}</p>
-                  <p className="text-xs text-muted-foreground">{task.time}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {task.confidence && (
-                    <Badge variant="secondary" className="text-xs">
-                      {task.confidence}/10
-                    </Badge>
-                  )}
-                  <Badge className={task.status === "completed" ? "bg-green-500" : "bg-blue-500"}>
-                    {task.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-            <Link href="/dashboard/reports">
-              <Button variant="ghost" className="w-full gap-2">
-                View all reports
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => (
+          <StatCard key={index} stat={stat} />
+        ))}
+      </div>
 
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Sales Chart - Takes 2 columns */}
+        <SalesChart />
+        
+        {/* Right Column */}
+        <div className="space-y-6">
+          <AutomationStatus />
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RecentOrdersTable />
+        
+        {/* Quick Actions */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">System Status</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {[
-                { name: "Groq API", status: "Operational", latency: "120ms" },
-                { name: "Web Search (Serper)", status: "Operational", latency: "245ms" },
-                { name: "Notion Integration", status: "Operational", latency: "180ms" },
-                { name: "ChromaDB", status: "Operational", latency: "15ms" },
-              ].map((service) => (
-                <div key={service.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-sm">{service.name}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{service.latency}</span>
-                </div>
-              ))}
-            </div>
-            <div className="pt-4 border-t border-foreground/10">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">System Version</span>
-                <span>v1.0.0</span>
-              </div>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/dashboard/new-task">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  <span className="text-sm">New Task</span>
+                </Button>
+              </Link>
+              <Link href="/dashboard/orders">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2">
+                  <ShoppingBag className="h-5 w-5" />
+                  <span className="text-sm">View Orders</span>
+                </Button>
+              </Link>
+              <Link href="/dashboard/automations">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2">
+                  <Package className="h-5 w-5" />
+                  <span className="text-sm">Automations</span>
+                </Button>
+              </Link>
+              <Link href="/dashboard/reports">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  <span className="text-sm">Reports</span>
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
