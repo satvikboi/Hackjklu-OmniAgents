@@ -6,7 +6,7 @@ const steps = [
   {
     number: "I",
     title: "Type your goal",
-    description: "Enter any complex question in plain English. No technical skills required. OracleAgent handles the rest.",
+    description: "Enter any complex question in plain English. No technical skills required. OmniAgent handles the rest.",
     code: `POST /api/run-goal
 {
   "goal": "Should I launch a fintech \\

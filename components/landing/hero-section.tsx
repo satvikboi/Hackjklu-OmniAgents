@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { AnimatedSphere } from "./animated-sphere";
+import Link from "next/link";
 
 const words = ["research", "analyze", "verify", "deliver"];
 
@@ -117,13 +118,15 @@ export function HeroSection() {
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <Button 
-              size="lg" 
-              className="bg-foreground hover:bg-foreground/90 text-background px-8 h-14 text-base rounded-full group"
-            >
-              Try Demo
-              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-            </Button>
+            <Link href="/auth">
+              <Button 
+                size="lg" 
+                className="bg-foreground hover:bg-foreground/90 text-background px-8 h-14 text-base rounded-full group"
+              >
+                Try Demo
+                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
             <Button 
               size="lg" 
               variant="outline" 

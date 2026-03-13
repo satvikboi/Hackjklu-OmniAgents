@@ -21,8 +21,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'OracleAgent - Autonomous Multi-Agent AI System',
-  description: 'One sentence. Five AI agents. One verified report. OracleAgent collaborates, self-corrects, and delivers expert-level structured reports with real-world actions.',
+  title: 'OmniAgent - Autonomous Multi-Agent AI System',
+  description: 'One sentence. Five AI agents. One verified report. OmniAgent collaborates, self-corrects, and delivers expert-level structured reports with real-world actions.',
   generator: 'v0.app',
 }
 
