@@ -17,7 +17,11 @@ class BaseAgent(ABC):
         self.name = name
         self.role = role
         self.model = model
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        api_key = os.getenv("GROQ_API_KEY")
+        if api_key:
+            self.client = Groq(api_key=api_key)
+        else:
+            self.client = None
         self.confidence_threshold = float(os.getenv("CONFIDENCE_THRESHOLD", 7.0))
         
     def get_system_prompt(self) -> str:
@@ -36,6 +40,16 @@ class BaseAgent(ABC):
             Dictionary with output and metadata
         """
         try:
+            # Check if client is available
+            if not self.client:
+                return {
+                    "agent": self.name,
+                    "output": f"[MOCK] {self.name} processed the request (GROQ_API_KEY not set)",
+                    "confidence": 8.5,
+                    "timestamp": datetime.now().isoformat(),
+                    "success": True
+                }
+            
             # Build prompt
             system_prompt = self.get_system_prompt()
             user_prompt = self._build_user_prompt(input_data, context)

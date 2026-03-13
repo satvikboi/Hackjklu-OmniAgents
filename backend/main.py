@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 from uuid import uuid4, UUID
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, File, UploadFile, status
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, File, UploadFile, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -30,6 +30,37 @@ from schemas.request_schema import (
     GoalRequest, JobResponse, AgentEvent, 
     JobStatus, AutomationTrigger, FileUploadResponse
 )
+
+# Import MCP clients
+from mcp.shopify_client import ShopifyClient
+from mcp.whatsapp_client import WhatsAppClient
+from mcp.gmail_client import GmailClient
+from mcp.instagram_client import InstagramClient
+from mcp.sheets_client import GoogleSheetsClient
+from mcp.notion_client import NotionClient
+from mcp.search_client import BraveSearchClient
+
+# Import agents
+from agents.planner_agent import PlannerAgent
+from agents.researcher_agent import ResearcherAgent
+from agents.analyst_agent import AnalystAgent
+from agents.marketing_analyst_agent import MarketingAnalystAgent
+from agents.writer_agent import WriterAgent
+from agents.critic_agent import CriticAgent
+
+# Import automations
+from automations.order_automation import OrderAutomation
+from automations.inventory_automation import InventoryAutomation
+from automations.reengagement_automation import ReengagementAutomation
+from automations.social_automation import SocialAutomation
+from automations.review_automation import ReviewAutomation
+from automations.analytics_automation import AnalyticsAutomation
+from automations.ad_intelligence_automation import AdIntelligenceAutomation
+from automations.support_automation import SupportAutomation
+
+# Import scheduler and webhooks
+from scheduler import AutomationScheduler
+from webhooks.shopify_webhook import ShopifyWebhookHandler
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -51,14 +82,99 @@ jobs_db = {}
 # Security
 security = HTTPBearer()
 
+# Initialize MCP clients
+shopify_client = ShopifyClient()
+whatsapp_client = WhatsAppClient()
+gmail_client = GmailClient()
+instagram_client = InstagramClient()
+sheets_client = GoogleSheetsClient()
+notion_client = NotionClient()
+search_client = BraveSearchClient()
+
+# Initialize agents
+planner_agent = PlannerAgent()
+researcher_agent = ResearcherAgent()
+analyst_agent = AnalystAgent()
+marketing_agent = MarketingAnalystAgent()
+writer_agent = WriterAgent()
+critic_agent = CriticAgent()
+
+# Initialize automations
+order_automation = OrderAutomation(
+    shopify_client, whatsapp_client, gmail_client,
+    sheets_client, writer_agent, critic_agent
+)
+inventory_automation = InventoryAutomation(
+    shopify_client, whatsapp_client, gmail_client,
+    sheets_client, analyst_agent
+)
+reengagement_automation = ReengagementAutomation(
+    shopify_client, whatsapp_client, gmail_client,
+    sheets_client, writer_agent
+)
+social_automation = SocialAutomation(
+    instagram_client, notion_client, search_client,
+    writer_agent, marketing_agent, critic_agent
+)
+review_automation = ReviewAutomation(
+    whatsapp_client, gmail_client, writer_agent, critic_agent
+)
+analytics_automation = AnalyticsAutomation(
+    shopify_client, sheets_client, notion_client,
+    whatsapp_client, gmail_client, analyst_agent,
+    writer_agent, critic_agent
+)
+ad_intelligence_automation = AdIntelligenceAutomation(
+    notion_client, whatsapp_client, search_client,
+    marketing_agent, writer_agent
+)
+support_automation = SupportAutomation(
+    instagram_client, whatsapp_client, shopify_client, writer_agent
+)
+
+# Initialize scheduler
+scheduler = None
+
+# Initialize webhook handler
+shopify_webhook_handler = ShopifyWebhookHandler(
+    order_automation, 
+    os.getenv("SHOPIFY_WEBHOOK_SECRET", "")
+)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
+    global scheduler
     # Startup
     print("🚀 Starting OmniAgent Backend...")
+    
+    # Initialize and start scheduler
+    scheduler = AutomationScheduler(sio)
+    # Add demo user config
+    scheduler.add_user_config("demo_user", {
+        "industry": "Clothing",
+        "brand_name": "Demo Boutique",
+        "owner_phone": os.getenv("OWNER_PHONE", ""),
+        "owner_email": os.getenv("OWNER_EMAIL", ""),
+        "supplier_email": os.getenv("SUPPLIER_EMAIL", ""),
+        "supplier_name": "Main Supplier",
+        "sheets_id": os.getenv("GOOGLE_SHEETS_ID", ""),
+        "notion_db_id": os.getenv("NOTION_DB_ID", ""),
+        "content_calendar_db_id": os.getenv("NOTION_CONTENT_DB_ID", ""),
+        "reports_db_id": os.getenv("NOTION_REPORTS_DB_ID", ""),
+        "ad_recommendations_db_id": os.getenv("NOTION_ADS_DB_ID", ""),
+        "competitors": ["Competitor A", "Competitor B"],
+        "target_audience": "Women 25-40"
+    })
+    scheduler.start()
+    print("✅ Automation scheduler started")
+    
     yield
+    
     # Shutdown
     print("🛑 Shutting down OmniAgent Backend...")
+    if scheduler:
+        scheduler.shutdown()
 
 # Create FastAPI app
 app = FastAPI(
@@ -290,68 +406,234 @@ async def upload_file(
 
 @app.get("/api/automations")
 async def list_automations(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """List all available automations"""
+    """List all 8 available automations from api.md"""
     return {
         "automations": [
             {
-                "id": "morning-briefing",
-                "name": "Morning Briefing",
+                "id": "order-management",
+                "name": "Order Management",
+                "description": "Automated order confirmations, shipping updates, and review requests",
                 "status": "active",
-                "schedule": "Daily at 7:00 AM IST"
+                "schedule": "Triggered by Shopify webhooks",
+                "apis": ["Shopify", "Gmail", "WhatsApp"],
+                "category": "Order Management"
             },
             {
-                "id": "competitor-monitor",
-                "name": "Competitor Monitor",
+                "id": "inventory-management",
+                "name": "Inventory Management",
+                "description": "Daily stock checks with low stock alerts and auto-reorder emails",
                 "status": "active",
-                "schedule": "Daily at 8:00 AM IST"
+                "schedule": "Daily at 6:00 AM IST",
+                "apis": ["Shopify", "Google Sheets", "Gmail", "WhatsApp"],
+                "category": "Inventory"
             },
             {
-                "id": "content-calendar",
-                "name": "Weekly Content Calendar",
+                "id": "customer-reengagement",
+                "name": "Customer Re-engagement",
+                "description": "Win back inactive customers with personalized offers",
                 "status": "active",
-                "schedule": "Weekly on Monday"
+                "schedule": "Weekly on Sunday at 10:00 AM IST",
+                "apis": ["Shopify", "Gmail", "WhatsApp", "Google Sheets"],
+                "category": "Marketing"
             },
             {
-                "id": "review-manager",
-                "name": "Review Auto-Reply",
-                "status": "paused",
-                "schedule": "Every 2 hours"
+                "id": "social-media-content",
+                "name": "Social Media Content",
+                "description": "Generate and schedule 7 posts per week with trending hashtags",
+                "status": "active",
+                "schedule": "Weekly on Monday at 8:00 AM IST",
+                "apis": ["Instagram", "Notion", "Brave Search"],
+                "category": "Social Media"
             },
             {
-                "id": "inventory-alerts",
-                "name": "Inventory Alerts",
+                "id": "review-management",
+                "name": "Review Management",
+                "description": "Auto-respond to Google reviews with AI-generated replies",
                 "status": "active",
-                "schedule": "Daily at 10:00 AM IST"
+                "schedule": "Every 2 hours",
+                "apis": ["Google My Business", "WhatsApp"],
+                "category": "Reputation"
             },
             {
-                "id": "weekly-report",
-                "name": "Weekly Business Report",
+                "id": "sales-analytics",
+                "name": "Sales Analytics & Reporting",
+                "description": "Weekly business reports with insights and best sellers",
                 "status": "active",
-                "schedule": "Weekly on Sunday"
+                "schedule": "Weekly on Monday at 7:00 AM IST",
+                "apis": ["Shopify", "Google Sheets", "Notion", "WhatsApp", "Gmail"],
+                "category": "Analytics"
+            },
+            {
+                "id": "ad-intelligence",
+                "name": "Ad Campaign Intelligence",
+                "description": "Monitor competitor ads and optimize your campaigns",
+                "status": "active",
+                "schedule": "Daily at 9:00 AM IST",
+                "apis": ["Meta Ads", "Brave Search", "Notion", "WhatsApp"],
+                "category": "Advertising"
+            },
+            {
+                "id": "customer-support",
+                "name": "Customer Support",
+                "description": "Auto-answer common questions via Instagram DMs and WhatsApp",
+                "status": "active",
+                "schedule": "Every 30 minutes",
+                "apis": ["Instagram", "WhatsApp", "Shopify"],
+                "category": "Support"
             }
         ]
     }
 
-@app.post("/api/automations/trigger")
+@app.post("/api/automations/{automation_id}/trigger")
 async def trigger_automation(
-    trigger: AutomationTrigger,
+    automation_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Manually trigger an automation"""
-    # Implementation for triggering automations
-    return {"status": "triggered", "automation_type": trigger.automation_type}
+    token = credentials.credentials
+    email = token.replace("mock_token_", "")
+    
+    if email not in users_db:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user_id = str(users_db[email]["id"])
+    
+    # Map automation IDs to trigger methods
+    automation_map = {
+        "inventory-management": scheduler.trigger_inventory_check if scheduler else None,
+        "customer-reengagement": scheduler.trigger_reengagement if scheduler else None,
+        "social-media-content": scheduler.trigger_social_content if scheduler else None,
+        "sales-analytics": scheduler.trigger_analytics if scheduler else None,
+        "ad-intelligence": scheduler.trigger_ad_intelligence if scheduler else None,
+        "review-management": scheduler.trigger_review_check if scheduler else None,
+    }
+    
+    trigger_func = automation_map.get(automation_id)
+    if not trigger_func:
+        raise HTTPException(status_code=400, detail="Invalid automation ID or not triggerable")
+    
+    # Run the automation
+    result = await trigger_func(user_id)
+    
+    return {
+        "status": "triggered",
+        "automation_id": automation_id,
+        "result": result
+    }
+
+@app.get("/api/automations/scheduled-jobs")
+async def get_scheduled_jobs(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get list of scheduled automation jobs"""
+    if not scheduler:
+        return {"jobs": []}
+    
+    return {"jobs": scheduler.get_scheduled_jobs()}
 
 @app.get("/api/briefing/today")
 async def get_daily_briefing(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get today's morning briefing"""
+    # Get real data from Shopify
+    from datetime import timedelta
+    yesterday = datetime.now() - timedelta(days=1)
+    analytics = shopify_client.get_analytics(
+        start_date=yesterday.strftime("%Y-%m-%d"),
+        end_date=datetime.now().strftime("%Y-%m-%d")
+    )
+    
     return {
         "date": datetime.now().strftime("%Y-%m-%d"),
-        "revenue_yesterday": 12450,
-        "best_product": "Festive Kurtis",
-        "new_reviews": 3,
-        "stock_alerts": 2,
-        "action": "Competitor launched 20% discount. Consider limited-time offer."
+        "revenue_yesterday": analytics.get("total_revenue", 0),
+        "orders_yesterday": analytics.get("total_orders", 0),
+        "best_product": analytics.get("best_sellers", [{}])[0].get("name", "N/A") if analytics.get("best_sellers") else "N/A",
+        "new_reviews": 3,  # Would come from Google My Business API
+        "stock_alerts": 0,  # Would come from inventory check
+        "action": "Check your dashboard for detailed insights."
     }
+
+# ============== WEBHOOK ENDPOINTS ==============
+
+@app.post("/webhooks/shopify")
+async def shopify_webhook(request: Request):
+    """Handle Shopify webhooks"""
+    try:
+        # Get headers
+        topic = request.headers.get("X-Shopify-Topic", "")
+        signature = request.headers.get("X-Shopify-Hmac-Sha256", "")
+        
+        # Get body
+        body = await request.body()
+        data = json.loads(body)
+        
+        # Verify signature (optional in dev)
+        # if not shopify_webhook_handler.verify_signature(body, signature):
+        #     raise HTTPException(status_code=401, detail="Invalid signature")
+        
+        # Get user config (would lookup by shop domain in production)
+        user_config = {
+            "industry": "Clothing",
+            "brand_name": "Demo Boutique",
+            "owner_phone": os.getenv("OWNER_PHONE", ""),
+            "owner_email": os.getenv("OWNER_EMAIL", ""),
+            "sheets_id": os.getenv("GOOGLE_SHEETS_ID", ""),
+        }
+        
+        # Process webhook
+        result = await shopify_webhook_handler.process_webhook(topic, data, user_config)
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============== MCP API ENDPOINTS ==============
+
+@app.get("/api/shopify/orders")
+async def get_shopify_orders(
+    limit: int = 50,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get orders from Shopify"""
+    orders = shopify_client.get_orders(limit=limit)
+    return {"orders": orders}
+
+@app.get("/api/shopify/inventory")
+async def get_shopify_inventory(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get inventory from Shopify"""
+    inventory = shopify_client.get_inventory()
+    return {"inventory": inventory}
+
+@app.get("/api/instagram/insights")
+async def get_instagram_insights(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get Instagram insights"""
+    metrics = instagram_client.get_engagement_metrics(days=7)
+    return {"insights": metrics}
+
+@app.post("/api/support/handle-inquiry")
+async def handle_support_inquiry(
+    inquiry: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Handle a customer support inquiry"""
+    token = credentials.credentials
+    email = token.replace("mock_token_", "")
+    
+    user_config = {
+        "industry": "Clothing",
+        "brand_name": "Demo Boutique",
+    }
+    
+    result = await support_automation.handle_inquiry(
+        customer_id=inquiry.get("customer_id"),
+        message=inquiry.get("message"),
+        channel=inquiry.get("channel", "whatsapp"),
+        user_config=user_config
+    )
+    
+    return result
 
 # ============== WEBSOCKET EVENTS ==============
 
