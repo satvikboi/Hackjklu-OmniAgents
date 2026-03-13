@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { AgentPipelineCompact } from "@/components/agent/agent-pipeline";
+import { ActivityFeedMini } from "@/components/agent/activity-feed";
+import { AgentNetworkMini } from "@/components/agent/agent-network";
 import {
   PlusCircle,
   Activity,

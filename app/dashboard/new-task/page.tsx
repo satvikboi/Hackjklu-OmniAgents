@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { AgentPipeline } from "@/components/agent/agent-pipeline";
+import { ActivityFeed } from "@/components/agent/activity-feed";
 import {
   ArrowRight,
   Upload,
@@ -102,12 +104,18 @@ export default function NewTaskPage() {
     setIsSubmitting(false);
   };
 
+  const getAgentStatus = (step: number, current: number): "waiting" | "active" | "complete" | "retrying" => {
+    if (current > step) return "complete";
+    if (current === step) return "active";
+    return "waiting";
+  };
+
   const agents = [
-    { icon: Brain, name: "Planner", role: "Breaking goal into subtasks", status: currentStep > 0 ? "complete" : currentStep === 0 ? "active" : "waiting" as const, confidence: currentStep > 0 ? 9.1 : undefined, message: currentStep === 0 ? "Analyzing goal structure..." : currentStep > 0 ? "Created 4 subtasks" : undefined },
-    { icon: Search, name: "Researcher", role: "Gathering information", status: currentStep > 1 ? "complete" : currentStep === 1 ? "active" : "waiting" as const, confidence: currentStep > 1 ? 8.5 : undefined, message: currentStep === 1 ? "Searching web sources..." : currentStep > 1 ? "Found 12 sources" : undefined },
-    { icon: BarChart3, name: "Analyst", role: "Processing data", status: currentStep > 2 ? "complete" : currentStep === 2 ? "active" : "waiting" as const, confidence: currentStep > 2 ? 8.8 : undefined, message: currentStep === 2 ? "Extracting insights..." : currentStep > 2 ? "Identified 8 key insights" : undefined },
-    { icon: PenTool, name: "Writer", role: "Generating report", status: currentStep > 3 ? "complete" : currentStep === 3 ? "active" : "waiting" as const, confidence: currentStep > 3 ? 9.0 : undefined, message: currentStep === 3 ? "Writing final report..." : currentStep > 3 ? "Report generated" : undefined },
-    { icon: Shield, name: "Critic", role: "Quality control", status: currentStep > 4 ? "complete" : currentStep === 4 ? "active" : "waiting" as const, confidence: currentStep > 4 ? 9.2 : undefined, message: currentStep === 4 ? "Evaluating report quality..." : currentStep > 4 ? "Approved with score 9.2/10" : undefined },
+    { icon: Brain, name: "Planner", role: "Breaking goal into subtasks", status: getAgentStatus(0, currentStep), confidence: currentStep > 0 ? 9.1 : undefined, message: currentStep === 0 ? "Analyzing goal structure..." : currentStep > 0 ? "Created 4 subtasks" : undefined },
+    { icon: Search, name: "Researcher", role: "Gathering information", status: getAgentStatus(1, currentStep), confidence: currentStep > 1 ? 8.5 : undefined, message: currentStep === 1 ? "Searching web sources..." : currentStep > 1 ? "Found 12 sources" : undefined },
+    { icon: BarChart3, name: "Analyst", role: "Processing data", status: getAgentStatus(2, currentStep), confidence: currentStep > 2 ? 8.8 : undefined, message: currentStep === 2 ? "Extracting insights..." : currentStep > 2 ? "Identified 8 key insights" : undefined },
+    { icon: PenTool, name: "Writer", role: "Generating report", status: getAgentStatus(3, currentStep), confidence: currentStep > 3 ? 9.0 : undefined, message: currentStep === 3 ? "Writing final report..." : currentStep > 3 ? "Report generated" : undefined },
+    { icon: Shield, name: "Critic", role: "Quality control", status: getAgentStatus(4, currentStep), confidence: currentStep > 4 ? 9.2 : undefined, message: currentStep === 4 ? "Evaluating report quality..." : currentStep > 4 ? "Approved with score 9.2/10" : undefined },
   ];
 
   return (
