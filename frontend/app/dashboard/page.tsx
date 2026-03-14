@@ -1,68 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowRight,
   Sparkles,
-  Bot,
-  Search,
   BarChart3,
+  Users,
   FileText,
   Zap,
   TrendingUp,
-  Users,
   Clock,
   CheckCircle2,
-  AlertCircle,
+  RefreshCw,
+  Eye,
+  ChevronRight,
   Play,
   Pause,
-  RefreshCw,
-  ExternalLink,
-  Eye,
+  Activity,
 } from "lucide-react";
 import {
   AreaChart,
   Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
-// Sample data
 const salesData = [
-  { date: "Mon", sales: 4200 },
-  { date: "Tue", sales: 3800 },
-  { date: "Wed", sales: 5100 },
-  { date: "Thu", sales: 4600 },
-  { date: "Fri", sales: 6200 },
-  { date: "Sat", sales: 7100 },
-  { date: "Sun", sales: 5800 },
-];
-
-const recentJobs = [
-  { id: 1, name: "Customer Re-engagement Campaign", status: "completed", time: "2 min ago", agents: 6 },
-  { id: 2, name: "Weekly Instagram Content", status: "running", time: "5 min ago", agents: 4 },
-  { id: 3, name: "Inventory Analysis Report", status: "completed", time: "1 hour ago", agents: 3 },
-  { id: 4, name: "Competitor Price Monitoring", status: "queued", time: "Pending", agents: 2 },
+  { date: "Mon", value: 4200 },
+  { date: "Tue", value: 3800 },
+  { date: "Wed", value: 5100 },
+  { date: "Thu", value: 4600 },
+  { date: "Fri", value: 6200 },
+  { date: "Sat", value: 7100 },
+  { date: "Sun", value: 5800 },
 ];
 
 const quickPrompts = [
-  { text: "Analyze my sales trends this month", icon: BarChart3 },
-  { text: "Create Instagram posts for new arrivals", icon: Sparkles },
-  { text: "Find customers who haven't ordered in 30 days", icon: Users },
-  { text: "Generate weekly business report", icon: FileText },
+  { text: "Analyze sales trends", icon: BarChart3 },
+  { text: "Create Instagram posts", icon: Sparkles },
+  { text: "Find inactive customers", icon: Users },
+  { text: "Generate weekly report", icon: FileText },
 ];
+
+const agents = [
+  { letter: "P", name: "Planner", color: "#3b82f6" },
+  { letter: "R", name: "Researcher", color: "#8b5cf6" },
+  { letter: "A", name: "Analyst", color: "#10b981" },
+  { letter: "M", name: "Marketing", color: "#f59e0b" },
+  { letter: "W", name: "Writer", color: "#ec4899" },
+  { letter: "C", name: "Critic", color: "#f97316" },
+];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+  },
+};
 
 export default function DashboardPage() {
   const [goalInput, setGoalInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [hoveredAgent, setHoveredAgent] = useState<number | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleRunAgents = () => {
     if (!goalInput.trim()) return;
@@ -71,316 +92,349 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-full">
-      {/* Hero Section - Goal Input */}
-      <div className="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 px-6 lg:px-8 py-8 lg:py-12">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-violet-400" />
-            </div>
-            <span className="text-sm font-medium text-zinc-400">AI-Powered Automation</span>
-          </div>
-          
-          <h1 className="text-2xl lg:text-3xl font-semibold text-white mb-2">
-            What would you like to accomplish?
-          </h1>
-          <p className="text-zinc-400 mb-6">
-            Describe your goal in plain English. Our 6 AI agents will collaborate to deliver results.
-          </p>
-
-          {/* Input Area */}
-          <div className="bg-zinc-800/50 rounded-xl border border-zinc-700/50 p-4">
-            <Textarea
-              placeholder="e.g., Analyze my top 10 customers and suggest personalized offers for each..."
-              value={goalInput}
-              onChange={(e) => setGoalInput(e.target.value)}
-              className="min-h-[100px] text-base bg-transparent border-0 text-white placeholder:text-zinc-500 focus-visible:ring-0 resize-none p-0"
-            />
-            
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-700/50">
-              <div className="flex flex-wrap gap-2">
-                {quickPrompts.map((prompt, i) => {
-                  const Icon = prompt.icon;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setGoalInput(prompt.text)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {prompt.text}
-                    </button>
-                  );
-                })}
+    <div className="min-h-full bg-[#fafafa]">
+      {/* Hero Section */}
+      <div className="relative px-6 lg:px-8 pt-12 pb-8">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
+            {/* Status Badge */}
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-zinc-200 shadow-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-sm text-zinc-600">6 agents ready</span>
               </div>
-              
-              <Button
-                onClick={handleRunAgents}
-                disabled={!goalInput.trim() || isProcessing}
-                className="bg-violet-600 hover:bg-violet-700 text-white px-6 h-10"
+            </div>
+
+            {/* Main Title */}
+            <h1 className="text-4xl lg:text-5xl font-semibold text-zinc-900 text-center tracking-tight mb-4">
+              What would you like to
+              <br />
+              <span className="text-zinc-400">accomplish today?</span>
+            </h1>
+            <p className="text-zinc-500 text-center text-lg mb-12 max-w-xl mx-auto">
+              Describe your goal in plain English. Our AI agents will collaborate to deliver results.
+            </p>
+
+            {/* Input Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6 hover:shadow-md transition-shadow duration-300">
+                <Textarea
+                  placeholder="e.g., Analyze my top 10 customers and suggest personalized offers..."
+                  value={goalInput}
+                  onChange={(e) => setGoalInput(e.target.value)}
+                  className="min-h-[120px] text-lg bg-transparent border-0 text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-0 resize-none p-0"
+                />
+
+                {/* Quick Prompts */}
+                <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-zinc-100">
+                  {quickPrompts.map((prompt, i) => {
+                    const Icon = prompt.icon;
+                    return (
+                      <motion.button
+                        key={i}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setGoalInput(prompt.text)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm text-zinc-600 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors"
+                      >
+                        <Icon className="w-4 h-4 text-zinc-400" />
+                        {prompt.text}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Floating Action Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+                className="flex justify-center mt-6"
               >
-                {isProcessing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Run Agents
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+                <Button
+                  onClick={handleRunAgents}
+                  disabled={!goalInput.trim() || isProcessing}
+                  className="h-12 px-8 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {isProcessing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Run Agents
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.div>
 
-          {/* Agent Status */}
-          <div className="flex items-center justify-between mt-6">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-sm text-zinc-400">6 Agents Ready</span>
-              </div>
-              <div className="flex -space-x-2">
-                {["P", "R", "A", "M", "W", "C"].map((letter, i) => (
+            {/* Agent Avatars */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="flex items-center justify-center gap-3 mt-10"
+            >
+              {agents.map((agent, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.6 + i * 0.05 }}
+                  whileHover={{ scale: 1.15, y: -4 }}
+                  onHoverStart={() => setHoveredAgent(i)}
+                  onHoverEnd={() => setHoveredAgent(null)}
+                  className="relative cursor-pointer"
+                >
                   <div
-                    key={i}
-                    className="w-7 h-7 rounded-full bg-zinc-700 border-2 border-zinc-900 flex items-center justify-center text-xs font-medium text-zinc-300"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white shadow-sm transition-shadow"
+                    style={{ backgroundColor: agent.color }}
                   >
-                    {letter}
+                    {agent.letter}
                   </div>
-                ))}
-              </div>
-            </div>
-            <Link href="/dashboard/agents">
-              <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <Eye className="w-4 h-4 mr-2" />
-                View Agents
-              </Button>
-            </Link>
-          </div>
+                  <AnimatePresence>
+                    {hoveredAgent === i && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-zinc-900 text-white text-xs rounded-lg whitespace-nowrap"
+                      >
+                        {agent.name}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="px-6 lg:px-8 py-6 lg:py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-zinc-500">Total Revenue</span>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-zinc-900">₹36,800</div>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs font-medium text-emerald-600">+12.5%</span>
-                  <span className="text-xs text-zinc-400">from last week</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-zinc-500">Tasks Completed</span>
-                  <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
-                    <CheckCircle2 className="w-4 h-4 text-violet-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-zinc-900">147</div>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs font-medium text-violet-600">+23</span>
-                  <span className="text-xs text-zinc-400">this week</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-zinc-500">Active Automations</span>
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-blue-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-zinc-900">8</div>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs text-zinc-400">All running smoothly</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-zinc-500">Time Saved</span>
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-amber-600" />
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-zinc-900">48h</div>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs text-zinc-400">this month</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Chart Section */}
-            <Card className="lg:col-span-2 border-0 shadow-sm">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-semibold">Agent Activity</CardTitle>
-                  <Button variant="ghost" size="sm" className="text-xs text-zinc-500">
-                    View Details
-                    <ExternalLink className="w-3 h-3 ml-1" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[240px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={salesData}>
-                      <defs>
-                        <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.2}/>
-                          <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                      <XAxis 
-                        dataKey="date" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fontSize: 12, fill: '#a1a1aa' }}
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fontSize: 12, fill: '#a1a1aa' }}
-                        tickFormatter={(value) => `₹${value/1000}k`}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#18181b',
-                          border: 'none',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                        }}
-                        labelStyle={{ color: '#a1a1aa' }}
-                        itemStyle={{ color: '#fff' }}
-                        formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="sales" 
-                        stroke="#8b5cf6" 
-                        strokeWidth={2}
-                        fillOpacity={1} 
-                        fill="url(#colorGradient)" 
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Jobs */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-semibold">Recent Jobs</CardTitle>
-                  <Link href="/dashboard/jobs">
-                    <Button variant="ghost" size="sm" className="text-xs text-zinc-500">
-                      View All
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentJobs.map((job) => (
-                    <div key={job.id} className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 transition-colors cursor-pointer">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        job.status === "completed" 
-                          ? "bg-emerald-100" 
-                          : job.status === "running" 
-                            ? "bg-blue-100" 
-                            : "bg-zinc-200"
-                      }`}>
-                        {job.status === "completed" ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        ) : job.status === "running" ? (
-                          <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
-                        ) : (
-                          <Clock className="w-4 h-4 text-zinc-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-zinc-900 truncate">{job.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-zinc-500">{job.time}</span>
-                          <span className="text-xs text-zinc-400">•</span>
-                          <span className="text-xs text-zinc-500">{job.agents} agents</span>
+      {/* Stats Section */}
+      <div className="px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          >
+            {[
+              { title: "Total Revenue", value: "₹36,800", change: "+12.5%", icon: TrendingUp, color: "emerald" },
+              { title: "Tasks Completed", value: "147", change: "+23", icon: CheckCircle2, color: "violet" },
+              { title: "Active Automations", value: "8", change: "Running", icon: Zap, color: "blue" },
+              { title: "Time Saved", value: "48h", change: "This month", icon: Clock, color: "amber" },
+            ].map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <motion.div key={i} variants={itemVariants}>
+                  <Card className="border-0 shadow-sm bg-white hover:shadow-md transition-shadow duration-300">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm text-zinc-500 mb-1">{stat.title}</p>
+                          <p className="text-2xl font-semibold text-zinc-900">{stat.value}</p>
+                          <p className={`text-xs mt-1 ${
+                            stat.color === "emerald" ? "text-emerald-600" :
+                            stat.color === "violet" ? "text-violet-600" :
+                            stat.color === "blue" ? "text-blue-600" :
+                            "text-amber-600"
+                          }`}>
+                            {stat.change}
+                          </p>
+                        </div>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          stat.color === "emerald" ? "bg-emerald-50" :
+                          stat.color === "violet" ? "bg-violet-50" :
+                          stat.color === "blue" ? "bg-blue-50" :
+                          "bg-amber-50"
+                        }`}>
+                          <Icon className={`w-5 h-5 ${
+                            stat.color === "emerald" ? "text-emerald-500" :
+                            stat.color === "violet" ? "text-violet-500" :
+                            stat.color === "blue" ? "text-blue-500" :
+                            "text-amber-500"
+                          }`} />
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </motion.div>
 
-          {/* Automations Section */}
-          <div className="mt-8">
+          {/* Chart & Activity */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid lg:grid-cols-3 gap-6"
+          >
+            {/* Chart */}
+            <motion.div variants={itemVariants} className="lg:col-span-2">
+              <Card className="border-0 shadow-sm bg-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-zinc-900">Activity</h3>
+                      <p className="text-sm text-zinc-500">Tasks completed over time</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-zinc-500">
+                      <Activity className="w-4 h-4" />
+                      <span>Live</span>
+                    </div>
+                  </div>
+                  <div className="h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={salesData}>
+                        <defs>
+                          <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#18181b" stopOpacity={0.1}/>
+                            <stop offset="100%" stopColor="#18181b" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <XAxis 
+                          dataKey="date" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fontSize: 12, fill: '#a1a1aa' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#18181b',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            color: '#fff'
+                          }}
+                          formatter={(value: any) => [`${value} tasks`, 'Completed']}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke="#18181b" 
+                          strokeWidth={2}
+                          fill="url(#gradient)" 
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Recent Activity */}
+            <motion.div variants={itemVariants}>
+              <Card className="border-0 shadow-sm bg-white h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-zinc-900">Recent</h3>
+                    <Link href="/dashboard/jobs">
+                      <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-zinc-900">
+                        View all
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </Link>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { name: "Customer Re-engagement", time: "2m ago", status: "completed" },
+                      { name: "Weekly Instagram Content", time: "5m ago", status: "running" },
+                      { name: "Inventory Analysis", time: "1h ago", status: "completed" },
+                      { name: "Competitor Monitoring", time: "Pending", status: "queued" },
+                    ].map((job, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.8 + i * 0.1 }}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 transition-colors cursor-pointer group"
+                      >
+                        <div className={`w-2 h-2 rounded-full ${
+                          job.status === "completed" ? "bg-emerald-400" :
+                          job.status === "running" ? "bg-blue-400 animate-pulse" :
+                          "bg-zinc-300"
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-zinc-900 truncate group-hover:text-zinc-700 transition-colors">
+                            {job.name}
+                          </p>
+                          <p className="text-xs text-zinc-500">{job.time}</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-500 group-hover:translate-x-1 transition-all" />
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+
+          {/* Automations Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="mt-8"
+          >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-zinc-900">Active Automations</h2>
+              <h3 className="text-lg font-semibold text-zinc-900">Active Automations</h3>
               <Link href="/dashboard/automations">
-                <Button variant="outline" size="sm">
-                  Manage All
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-zinc-900">
+                  Manage
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
             </div>
-            
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { name: "Order Management", status: "active", runs: 156, icon: "📦" },
-                { name: "Customer Re-engagement", status: "active", runs: 47, icon: "👥" },
-                { name: "Social Media Content", status: "active", runs: 28, icon: "📱" },
-                { name: "Inventory Alerts", status: "paused", runs: 12, icon: "📊" },
+                { name: "Order Management", runs: 156, icon: "📦" },
+                { name: "Customer Re-engagement", runs: 47, icon: "👥" },
+                { name: "Social Media Content", runs: 28, icon: "📱" },
+                { name: "Inventory Alerts", runs: 12, icon: "📊" },
               ].map((automation, i) => (
-                <Card key={i} className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="text-2xl">{automation.icon}</div>
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        automation.status === "active" 
-                          ? "bg-emerald-50 text-emerald-700" 
-                          : "bg-zinc-100 text-zinc-600"
-                      }`}>
-                        {automation.status === "active" ? (
-                          <Play className="w-3 h-3" />
-                        ) : (
-                          <Pause className="w-3 h-3" />
-                        )}
-                        {automation.status}
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.7 + i * 0.05 }}
+                  whileHover={{ y: -2 }}
+                >
+                  <Card className="border-0 shadow-sm bg-white hover:shadow-md transition-all cursor-pointer">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-2xl">{automation.icon}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                          <span className="text-xs text-emerald-600">Active</span>
+                        </div>
                       </div>
-                    </div>
-                    <h3 className="font-medium text-zinc-900 text-sm">{automation.name}</h3>
-                    <p className="text-xs text-zinc-500 mt-1">{automation.runs} runs this month</p>
-                  </CardContent>
-                </Card>
+                      <h4 className="font-medium text-zinc-900 text-sm">{automation.name}</h4>
+                      <p className="text-xs text-zinc-500 mt-1">{automation.runs} runs</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
