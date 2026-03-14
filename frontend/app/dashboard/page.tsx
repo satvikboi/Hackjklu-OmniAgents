@@ -23,6 +23,7 @@ import {
   Pause,
   RefreshCw,
   ExternalLink,
+  Eye,
 } from "lucide-react";
 import {
   AreaChart,
@@ -135,21 +136,29 @@ export default function DashboardPage() {
           </div>
 
           {/* Agent Status */}
-          <div className="flex items-center gap-6 mt-6">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm text-zinc-400">6 Agents Ready</span>
+          <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-sm text-zinc-400">6 Agents Ready</span>
+              </div>
+              <div className="flex -space-x-2">
+                {["P", "R", "A", "M", "W", "C"].map((letter, i) => (
+                  <div
+                    key={i}
+                    className="w-7 h-7 rounded-full bg-zinc-700 border-2 border-zinc-900 flex items-center justify-center text-xs font-medium text-zinc-300"
+                  >
+                    {letter}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex -space-x-2">
-              {["P", "R", "A", "M", "W", "C"].map((letter, i) => (
-                <div
-                  key={i}
-                  className="w-7 h-7 rounded-full bg-zinc-700 border-2 border-zinc-900 flex items-center justify-center text-xs font-medium text-zinc-300"
-                >
-                  {letter}
-                </div>
-              ))}
-            </div>
+            <Link href="/dashboard/agents">
+              <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                <Eye className="w-4 h-4 mr-2" />
+                View Agents
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

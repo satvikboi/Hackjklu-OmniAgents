@@ -29,7 +29,7 @@ import {
   HelpCircle,
   ChevronRight,
   Layers,
-  Activity,
+  Bot,
 } from "lucide-react";
 
 const navItems = [
@@ -37,6 +37,12 @@ const navItems = [
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutGrid,
+  },
+  {
+    title: "Agents",
+    href: "/dashboard/agents",
+    icon: Bot,
+    highlight: true,
   },
   {
     title: "Automations",
@@ -48,11 +54,6 @@ const navItems = [
     title: "Reports",
     href: "/dashboard/reports",
     icon: FileText,
-  },
-  {
-    title: "Activity",
-    href: "/dashboard/jobs",
-    icon: Activity,
   },
 ];
 
@@ -82,11 +83,13 @@ function Sidebar() {
         className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
           isActive
             ? "bg-zinc-900 text-white"
-            : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+            : item.highlight
+              ? "bg-violet-50 text-violet-700 hover:bg-violet-100 hover:text-violet-800"
+              : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
         }`}
       >
         <div className="flex items-center gap-3">
-          <Icon className={`w-[18px] h-[18px] ${isActive ? "text-white" : "text-zinc-400 group-hover:text-zinc-600"}`} />
+          <Icon className={`w-[18px] h-[18px] ${isActive ? "text-white" : item.highlight ? "text-violet-500" : "text-zinc-400 group-hover:text-zinc-600"}`} />
           <span>{item.title}</span>
         </div>
         {item.badge && (
